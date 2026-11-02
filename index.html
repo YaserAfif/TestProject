@@ -89,7 +89,7 @@ body .secondary{color:var(--green)}
 @media(max-width:350px){.theme-colors{grid-template-columns:repeat(4,minmax(0,1fr))}.exchange-pair{grid-template-columns:minmax(0,1fr) 96px}}
 @media print{.page-topline button{display:none!important}.theme-colors{display:none}}
 /* Searchable account selectors share the same mobile-friendly design. */
-.account-combobox{position:relative;min-width:0}.account-combobox .account-search{width:100%;padding-inline-start:40px;background:var(--white);color:var(--ink)}
+.account-source{display:none!important}.account-combobox{position:relative;min-width:0}.account-combobox .account-search{width:100%;padding-inline-start:40px;background:var(--white);color:var(--ink)}
 .account-combobox .search-symbol{position:absolute;inset-inline-start:12px;top:14px;pointer-events:none;color:var(--green);font-size:18px;line-height:1}
 .account-combobox .account-options{position:absolute;z-index:120;top:calc(100% + 5px);right:0;left:0;max-height:min(245px,45dvh);overflow:auto;border:1px solid var(--line);border-radius:12px;padding:5px;background:var(--white);box-shadow:0 12px 27px #0002}
 .account-combobox.is-up .account-options{bottom:calc(100% + 5px);top:auto}.account-combobox .account-options[hidden]{display:none}
