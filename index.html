@@ -83,7 +83,7 @@ body .secondary{color:var(--green)}
 .exchange-card{max-width:760px;margin-inline:auto}.exchange-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;margin-bottom:15px}.exchange-title h2{margin:0}
 .exchange-card .field{margin:9px 0}.exchange-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,30%);gap:8px;direction:rtl;align-items:end}.exchange-pair .field{min-width:0}.exchange-pair input{font-weight:750;text-align:center;font-variant-numeric:tabular-nums}
 .exchange-pair select{font-weight:750;color:var(--green)}.exchange-arrow{text-align:center;font-size:24px;line-height:1.1;color:var(--green);font-weight:900}.exchange-rate{border-radius:10px;background:var(--bg);color:var(--muted);text-align:center;font-size:12px;padding:10px;min-height:39px}
-.exchange-rate-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;margin:8px 0 13px;direction:rtl}.exchange-rate-controls .field{margin:0;min-width:0}.exchange-operation{display:flex;border:1px solid var(--border);border-radius:11px;overflow:hidden;background:var(--bg);padding:3px;gap:3px}.exchange-operation label{cursor:pointer;white-space:nowrap;position:relative;padding:9px 11px;font-size:13px;border-radius:8px;color:var(--muted)}.exchange-operation input{position:absolute;opacity:0;width:1px;height:1px}.exchange-operation label:has(input:checked){background:var(--accent-gradient);color:#fff;font-weight:750}.exchange-operation label:focus-within{outline:2px solid var(--green);outline-offset:-2px}.exchange-pair input[readonly]{background:var(--bg);color:var(--green);cursor:default}.exchange-rate{font-weight:700;font-variant-numeric:tabular-nums}@media(max-width:330px){.exchange-rate-controls{gap:5px}.exchange-operation label{padding:9px 6px;font-size:12px}}
+.exchange-rate-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;margin:8px 0 13px;direction:rtl}.exchange-rate-controls .field{margin:0;min-width:0}.exchange-operation{display:flex;border:1px solid var(--border);border-radius:11px;overflow:hidden;background:var(--bg);padding:3px;gap:3px}.exchange-operation label{cursor:pointer;white-space:nowrap;position:relative;padding:9px 11px;font-size:13px;border-radius:8px;color:var(--muted)}.exchange-operation input{position:absolute;opacity:0;width:1px;height:1px}.exchange-operation label:has(input:checked){background:var(--accent-gradient);color:#fff;font-weight:750}.exchange-operation label:focus-within{outline:2px solid var(--green);outline-offset:-2px}.exchange-rate{font-weight:700;font-variant-numeric:tabular-nums}@media(max-width:330px){.exchange-rate-controls{gap:5px}.exchange-operation label{padding:9px 6px;font-size:12px}}
 .page-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}.page-topline h2{margin:0}.back-report{min-height:36px;padding:6px 12px}
 .clear-confirm{margin-top:12px;border:1px solid #e7aaa5;border-radius:12px;padding:12px;background:#fff5f4;color:#8c2119}.clear-confirm[hidden],#exchangeCancel[hidden]{display:none!important}.clear-confirm p{margin:0 0 8px;font-size:13px}.clear-buttons{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}.clear-buttons button{flex:1}.danger-zone{border-top:1px solid #efb0ab}.clear-buttons button:disabled{opacity:.42;cursor:not-allowed}
 @media(max-width:350px){.theme-colors{grid-template-columns:repeat(4,minmax(0,1fr))}.exchange-pair{grid-template-columns:minmax(0,1fr) 96px}}
@@ -120,7 +120,7 @@ body .secondary{color:var(--green)}
 <div class="exchange-rate-controls"><div class="field"><label for="exchangeRateInput">نرخ تبادله</label><input id="exchangeRateInput" dir="ltr" type="text" inputmode="decimal" autocomplete="off" required placeholder="مثلاً 65.10" aria-describedby="exchangeRate"/></div><div><label style="display:block;margin-bottom:6px">عملیه</label><div class="exchange-operation" role="radiogroup" aria-label="عملیه تبادله"><label><input type="radio" name="exchangeOperation" value="multiply" checked/>× ضرب</label><label><input type="radio" name="exchangeOperation" value="divide"/>÷ تقسیم</label></div></div></div>
 <div class="exchange-arrow" aria-hidden="true">↓</div>
 <div class="field"><label for="exchangeToAccount">به حساب</label><select required id="exchangeToAccount"></select></div>
-<div class="exchange-pair"><div class="field"><label for="exchangeToAmount">مبلغ دریافتی</label><input dir="ltr" type="text" inputmode="decimal" autocomplete="off" required readonly aria-readonly="true" placeholder="محاسبه خودکار" id="exchangeToAmount"/></div><div class="field currency-field"><label for="exchangeToCurrency">ارز دریافتی</label><select id="exchangeToCurrency"></select></div></div>
+<div class="exchange-pair"><div class="field"><label for="exchangeToAmount">مبلغ دریافتی (قابل اصلاح)</label><input dir="ltr" type="text" inputmode="decimal" autocomplete="off" required placeholder="مبلغ را وارد یا اصلاح کنید" id="exchangeToAmount"/></div><div class="field currency-field"><label for="exchangeToCurrency">ارز دریافتی</label><select id="exchangeToCurrency"></select></div></div>
 <div class="exchange-rate" id="exchangeRate" role="status" aria-live="polite">مبلغ و نرخ را وارد کنید تا نتیجه نمایش داده شود.</div>
 <div class="field"><label for="exchangeDate">تاریخ</label><input type="date" id="exchangeDate" required/><div class="date-subline" id="exchangeJalali"></div></div>
 <div class="field"><label for="exchangeNote">توضیحات</label><input maxlength="200" id="exchangeNote" placeholder="اختیاری"/></div>
@@ -158,7 +158,7 @@ function positionFloatingMenu(){const vv=window.visualViewport;if(!vv)return;con
 if(window.visualViewport){window.visualViewport.addEventListener('resize',positionFloatingMenu);window.visualViewport.addEventListener('scroll',positionFloatingMenu)}window.addEventListener('resize',positionFloatingMenu);positionFloatingMenu();
 function resetAmountFields(){ $('gotAmount').value='';$('talabAmount').value='';syncAmountFields(); }
 for(const id of ['gotAmount','talabAmount']){const el=$(id);el.addEventListener('input',()=>syncAmountFields());el.addEventListener('focus',()=>syncAmountFields());el.addEventListener('blur',()=>setTimeout(()=>syncAmountFields(),0));}
-const APP_VERSION='11.1.0';const DEFAULT_ACCOUNTS=['خزانه','مصارف','پرداخت نشده'];
+const APP_VERSION='11.2.0';const DEFAULT_ACCOUNTS=['خزانه','مصارف','پرداخت نشده'];
 const CURRENCIES_KEY='hesabket.currencies.v8';let currencies=['AFN'];const STORAGE_KEY='hesabket.records.v1', ACCOUNTS_KEY='hesabket.accounts.v3', SETTINGS_KEY='hesabket.settings.v3';let accounts=[],settings={calendar:'jalali',theme:'light',title:'دفتر حسابات',accent:'green'};let records=[];
 function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}$('date').value=today();
 function makeId(){return crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()}
@@ -436,21 +436,55 @@ function populateExchangeAccounts(){for(const id of ['exchangeFromAccount','exch
 function populateExchangeCurrencies(){for(const id of ['exchangeFromCurrency','exchangeToCurrency']){const el=$(id),old=el.value;el.innerHTML=currencies.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');el.value=currencies.includes(old)?old:(id==='exchangeToCurrency'?(currencies.find(c=>c!=='AFN')||'AFN'):'AFN')}}
 function exchangeDatePreview(){$('exchangeJalali').textContent='تاریخ شمسی: '+jalali($('exchangeDate').value)}
 function exchangeOperation(){return document.querySelector('input[name="exchangeOperation"]:checked')?.value==='divide'?'divide':'multiply'}
-function exchangeRatePreview(){
- const a=parsedAmount($('exchangeFromAmount').value),rate=parsedAmount($('exchangeRateInput').value),ca=$('exchangeFromCurrency').value,cb=$('exchangeToCurrency').value,op=exchangeOperation();
- const raw=a>0&&rate>0&&(ca!==cb)?(op==='multiply'?a*rate:a/rate):NaN;
- const b=Number.isFinite(raw)&&raw>0?Math.round((raw+Number.EPSILON)*100)/100:NaN;
- $('exchangeToAmount').value=Number.isFinite(b)&&b>0?formatAmountTyping(String(b)):'';
- $('exchangeRate').textContent=Number.isFinite(b)&&b>0?`${fmt(a)} ${ca} ${op==='multiply'?'×':'÷'} ${$('exchangeRateInput').value} = ${fmt(b)} ${cb}`: 'مبلغ، نرخ مثبت و دو ارز متفاوت را انتخاب کنید.';
+// Exchange inputs are bidirectional. The field last edited by the user is authoritative.
+// Rate precision is intentionally higher than transaction (2 decimals), so a manually
+// rounded received amount survives save/edit without introducing a monetary difference.
+function formatRateTyping(value){
+ const clean=latinDigits(value),parts=clean.split('.');
+ const whole=(parts.shift()||'').replace(/^0+(?=\d)/,'');
+ const decimals=parts.join('').slice(0,12);
+ return (whole?whole.replace(/\B(?=(\d{3})+(?!\d))/g,','):'')+(clean.includes('.')?'.'+decimals:'');
 }
-for(const id of ['exchangeFromAmount','exchangeRateInput']){$(id).addEventListener('input',()=>{const el=$(id),before=el.value,position=el.selectionStart??before.length;el.value=formatAmountTyping(before);try{el.setSelectionRange(formatAmountTyping(before.slice(0,position)).length,formatAmountTyping(before.slice(0,position)).length)}catch(e){}exchangeRatePreview()})}
-for(const id of ['exchangeFromCurrency','exchangeToCurrency']){$(id).addEventListener('change',exchangeRatePreview)}
-for(const input of document.querySelectorAll('input[name="exchangeOperation"]'))input.addEventListener('change',exchangeRatePreview)
+function effectiveExchangeRate(amount,received,operation){
+ const value=operation==='multiply'?received/amount:amount/received;
+ return Number.isFinite(value)&&value>0?Number(value.toFixed(12)):NaN;
+}
+function exchangeRatePreview(changed='rate'){
+ const a=parsedAmount($('exchangeFromAmount').value),ca=$('exchangeFromCurrency').value,cb=$('exchangeToCurrency').value,op=exchangeOperation();
+ const rateInput=$('exchangeRateInput'),receivedInput=$('exchangeToAmount');
+ if(changed==='received'){
+  const received=parsedAmount(receivedInput.value);
+  const nextRate=a>0&&received>0&&ca!==cb?effectiveExchangeRate(a,received,op):NaN;
+  rateInput.value=Number.isFinite(nextRate)&&nextRate>0?formatRateTyping(String(nextRate)):'';
+ }else if(changed!=='keep'){
+  const rate=parsedAmount(rateInput.value);
+  const raw=a>0&&rate>0&&ca!==cb?(op==='multiply'?a*rate:a/rate):NaN;
+  const received=Number.isFinite(raw)&&raw>0?Math.round((raw+Number.EPSILON)*100)/100:NaN;
+  receivedInput.value=Number.isFinite(received)&&received>0?formatAmountTyping(String(received)):'';
+ }
+ const received=parsedAmount(receivedInput.value),rate=parsedAmount(rateInput.value);
+ $('exchangeRate').textContent=a>0&&received>0&&rate>0&&ca!==cb
+  ? `${fmt(a)} ${ca} ${op==='multiply'?'×':'÷'} ${rateInput.value} ≈ ${fmt(received)} ${cb}`
+  : 'مبلغ، نرخ مثبت و دو ارز متفاوت را انتخاب کنید.';
+}
+function bindExchangeNumericInput(id,formatter,source){
+ $(id).addEventListener('input',()=>{
+  const el=$(id),before=el.value,position=el.selectionStart??before.length;
+  el.value=formatter(before);
+  try{const next=formatter(before.slice(0,position)).length;el.setSelectionRange(next,next)}catch(e){}
+  exchangeRatePreview(source);
+ });
+}
+bindExchangeNumericInput('exchangeFromAmount',formatAmountTyping,'amount');
+bindExchangeNumericInput('exchangeRateInput',formatRateTyping,'rate');
+bindExchangeNumericInput('exchangeToAmount',formatAmountTyping,'received');
+for(const id of ['exchangeFromCurrency','exchangeToCurrency'])$(id).addEventListener('change',()=>exchangeRatePreview('rate'));
+for(const input of document.querySelectorAll('input[name="exchangeOperation"]'))input.addEventListener('change',()=>exchangeRatePreview('rate'));
 $('exchangeDate').addEventListener('change',exchangeDatePreview);
 function resetExchange(){const edit=$('exchangeEditId');edit.value='';$('exchangeForm').reset();$('exchangeRateInput').value='';$('exchangeToAmount').value='';$('exchangeFromAccount').value='خزانه';$('exchangeToAccount').value='خزانه';$('exchangeFromCurrency').value='AFN';$('exchangeToCurrency').value=currencies.find(c=>c!=='AFN')||'AFN';$('exchangeDate').value=today();$('exchangeSubmit').textContent='ثبت تبادله';$('exchangeCancel').hidden=true;$('exchangeStatus').textContent='';exchangeDatePreview();exchangeRatePreview()}
 function openExchangeForEdit(r){const twin=records.find(x=>x.transferId&&x.transferId===r.transferId&&x.id!==r.id&&x.mode==='exchange');if(!twin){alert('ثبت مقابل تبادله پیدا نشد.');return}
  const outgoing=r.exchangeSide==='out'?r:twin,incoming=r.exchangeSide==='in'?r:twin;
- resetExchange();showPage('exchange');$('exchangeEditId').value=outgoing.transferId;$('exchangeFromAccount').value=outgoing.name;$('exchangeToAccount').value=incoming.name;$('exchangeFromCurrency').value=outgoing.currency;$('exchangeToCurrency').value=incoming.currency;$('exchangeFromAmount').value=formatAmountTyping(String(outgoing.amount));$('exchangeRateInput').value=formatAmountTyping(String(outgoing.exchangeRate||((outgoing.exchangeOperation==='divide')?outgoing.amount/incoming.amount:incoming.amount/outgoing.amount)));document.querySelector('input[name="exchangeOperation"][value="'+(outgoing.exchangeOperation==='divide'?'divide':'multiply')+'"]').checked=true;exchangeRatePreview();$('exchangeDate').value=outgoing.date;$('exchangeNote').value=outgoing.note||'';$('exchangeSubmit').textContent='ذخیره تغییرات تبادله';$('exchangeCancel').hidden=false;exchangeDatePreview();exchangeRatePreview()}
+ resetExchange();showPage('exchange');$('exchangeEditId').value=outgoing.transferId;$('exchangeFromAccount').value=outgoing.name;$('exchangeToAccount').value=incoming.name;$('exchangeFromCurrency').value=outgoing.currency;$('exchangeToCurrency').value=incoming.currency;$('exchangeFromAmount').value=formatAmountTyping(String(outgoing.amount));$('exchangeRateInput').value=formatRateTyping(String(outgoing.exchangeRate||effectiveExchangeRate(outgoing.amount,incoming.amount,outgoing.exchangeOperation)));$('exchangeToAmount').value=formatAmountTyping(String(incoming.amount));document.querySelector('input[name="exchangeOperation"][value="'+(outgoing.exchangeOperation==='divide'?'divide':'multiply')+'"]').checked=true;exchangeRatePreview('keep');$('exchangeDate').value=outgoing.date;$('exchangeNote').value=outgoing.note||'';$('exchangeSubmit').textContent='ذخیره تغییرات تبادله';$('exchangeCancel').hidden=false;exchangeDatePreview();exchangeRatePreview('keep')}
 $('exchangeCancel').addEventListener('click',resetExchange);
 $('exchangeForm').addEventListener('submit',e=>{e.preventDefault();const from=$('exchangeFromAccount').value,to=$('exchangeToAccount').value,ca=$('exchangeFromCurrency').value,cb=$('exchangeToCurrency').value,a=parsedAmount($('exchangeFromAmount').value),b=parsedAmount($('exchangeToAmount').value),rate=parsedAmount($('exchangeRateInput').value),operation=exchangeOperation(),date=$('exchangeDate').value,note=$('exchangeNote').value.trim(),editId=$('exchangeEditId').value;
  const exists=name=>accounts.some(x=>x.name===name);
