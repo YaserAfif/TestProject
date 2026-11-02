@@ -1,13 +1,13 @@
 {
-  "name": "دفتر حسابات",
+  "name": "دفتر حسابات — نسخه ۱۴",
   "short_name": "حسابات",
   "lang": "fa-AF",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f7f5",
-  "theme_color": "#176b51",
+  "background_color": "#f2f5f9",
+  "theme_color": "#086a83",
   "icons": [
     {
       "src": "icon-192.png",
@@ -23,5 +23,5 @@
     }
   ],
   "id": "./",
-  "description": "دفتر حسابات روزمره با روزنامچه، چندارزی و راپور اختصاصی"
+  "description": "حسابداری چندارزی، حواله وارده و صادره، تسویه قسمی، خزانه و راپور"
 }
