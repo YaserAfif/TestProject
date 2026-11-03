@@ -1,9 +1,0 @@
-/* دفتر حسابات ۱۷ */
-#v17-pin{margin-inline-start:8px;border:1px solid #b8c5bb;border-radius:9px;background:#fff;padding:8px;cursor:pointer}
-#v17-pin.v17-pinned{background:#e3f5e8;border-color:#198754;box-shadow:0 0 0 2px #19875433}
-.v17-account-sheet{background:var(--white,#fff);border:1px solid #d7e5dd;border-radius:16px;padding:14px;box-shadow:0 12px 35px #1235251a}
-.v17-document-sheet .v14-dialog{max-width:1100px;width:96vw}
-.v16-inflow,.v16-green{color:#08743d!important}.v16-outflow,.v16-red{color:#b42318!important}
-@media(min-width:901px){#menuToggle{display:none!important}}
-@media(max-width:900px){.v17-account-sheet{padding:10px;border-radius:12px}}
-@media print{#v17-pin,#menuToggle,.v16-ledger-footer{display:none!important}}
