@@ -69,7 +69,7 @@
  const voucherKey=r=>r.transferId||r.documentId||(r.mode==='imported'&&r.documentNo&&r.importFile?`import:${r.importFile}:${r.documentNo}:${r.date}`:String(r.id));
  const voucherHead=r=>C.records.find(x=>x.transferId===r.transferId&&x.hawalaRole==='principal')||r;
  const voucherType=r=>r.mode==='hawala'?(r.hawalaKind==='in'?'حواله وارده':'حواله صادره'):r.mode==='hawala-settlement'?'پرداخت حواله':r.mode==='exchange'?'تبادله':r.mode==='opening'?'بیلانس اولیه':r.mode==='imported'?'سند انتقالی':r.mode==='darak'?'انتقال بین حساب‌ها':'روزنامچه';
- const moneyCell=(lines,type)=>lines.filter(r=>r.type===type).map(r=>`<span class="v16-money ${type==='payment'?'v16-green':'v16-red'}">${amount(r.amount,cur(r))}</span>`).join('')||'—';
+ const moneyCell=(lines,type)=>{const totals=new Map();for(const r of lines){const c=cur(r);totals.set(c,(totals.get(c)||0)+C.delta(r))}return [...totals].filter(([,sum])=>type==='payment'?sum>0.000001:sum< -0.000001).map(([c,sum])=>`<span class="v16-money ${type==='payment'?'v16-green':'v16-red'}">${amount(Math.abs(sum),c)}</span>`).join('')||'—'};
  let lastDocAccount='',lastDocSig='';
  function renderAccountVouchers(force=false){const name=C.state.account,detail=$('v13-detail');if(!detail||!name||detail.hidden)return;const isDue=name==='پرداخت نشده',all=C.ledger(C.accountSource(name));
   let block=$('v16-account-vouchers');if(!block){block=document.createElement('section');block.id='v16-account-vouchers';block.className='v16-ledger-card';const menu=$('v13-account-action-menu');menu.insertAdjacentElement('afterend',block);
