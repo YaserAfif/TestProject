@@ -15,9 +15,28 @@ const allCurrencies=()=>[...new Set([...currencies,...records.map(r=>r.currency|
 const currentAccount=()=>accounts.find(a=>a.name===state.account);
 const safe=s=>esc(s);
 const ordered=rows=>rows.map((r,i)=>({...r,__originalOrder:i})).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||''))||a.__originalOrder-b.__originalOrder);
-const ledger=rows=>{const m=new Map();return ordered(rows).map(r=>{const key=r.currency||'AFN',amount=(r.type==='debt'?1:-1)*r.amount;const v=(m.get(key)||0)+amount;m.set(key,v);return {...r,closingBalance:v}})};
-const accountSource=name=>{const direct=records.filter(r=>r.name===name);if(name!=='خزانه')return direct;const derived=records.filter(r=>r.name!=='خزانه'&&(r.mode==='treasury'||(r.mode==='exchange'&&r.exchangeMode==='treasury'))).map(r=>({...r,name:'خزانه',cashOrigin:r.name,note:'اثر خزانه: '+r.name+(r.note?' — '+r.note:''),type:r.type==='payment'?'debt':'payment'}));return [...direct,...derived]};
-const actualBalances=name=>{const m=new Map();for(const r of accountSource(name))m.set(r.currency||'AFN',(m.get(r.currency||'AFN')||0)+(r.type==='debt'?1:-1)*r.amount);return [...m.entries()];};
+// v16 canonical ledger: signed movements for cash and unpaid are explicit, and
+// never inferred by reversing debtor/creditor signs from ordinary accounts.
+const signedMovement=r=>Number.isFinite(r.cashDelta)?r.cashDelta:(r.type==='debt'?1:-1)*Number(r.amount||0);
+const ledger=rows=>{const m=new Map();return ordered(rows).map(r=>{const key=r.currency||'AFN',v=(m.get(key)||0)+signedMovement(r);m.set(key,v);return {...r,closingBalance:Math.round(v*1000000)/1000000}})};
+const cashSign=r=>{
+ if(Number.isFinite(r.cashDirection))return Math.sign(r.cashDirection)*Number(r.amount||0);
+ // Legacy hawala and initial-cash postings already use 'debt' for cash-in.
+ if(r.mode==='hawala'||r.mode==='hawala-settlement'||r.mode==='opening')return (r.type==='debt'?1:-1)*Number(r.amount||0);
+ // A direct journal receipt ('طلب') is physical cash-in, 'گرفت' cash-out.
+ return (r.type==='payment'?1:-1)*Number(r.amount||0);
+};
+const accountSource=name=>{
+ const direct=records.filter(r=>r.name===name);
+ if(name==='خزانه'){
+  const cashRows=direct.map(r=>{const delta=cashSign(r);return {...r,cashDelta:delta,type:delta>=0?'payment':'debt'};});
+  const derived=records.filter(r=>r.name!=='خزانه'&&(r.mode==='treasury'||(r.mode==='exchange'&&r.exchangeMode==='treasury'))).map(r=>{const delta=(r.type==='payment'?1:-1)*Number(r.amount||0);return {...r,name:'خزانه',cashOrigin:r.name,cashDelta:delta,type:delta>=0?'payment':'debt',note:'اثر خزانه: '+r.name+(r.note?' — '+r.note:'')};});
+  return [...cashRows,...derived];
+ }
+ if(name==='پرداخت نشده')return direct.map(r=>{const delta=r.mode==='hawala'&&r.hawalaRole==='settlement'?Number(r.amount||0):r.mode==='hawala-settlement'?-Number(r.amount||0):(r.type==='payment'?1:-1)*Number(r.amount||0);return {...r,cashDelta:delta,type:delta>=0?'payment':'debt'}});
+ return direct;
+};
+const actualBalances=name=>{const m=new Map();for(const r of accountSource(name)){const cur=r.currency||'AFN';m.set(cur,(m.get(cur)||0)+signedMovement(r))}return [...m.entries()].map(([cur,v])=>[cur,Math.round(v*1000000)/1000000]);};
 const dateText=v=>displayDate(v);
 const methods={in:'حواله وارده',out:'حواله صادره'};
 const currencyTag=cur=>`<span class="currency-token" style="background:${currencyColor(cur)}">${safe(cur)}</span>`;
@@ -44,7 +63,7 @@ const listState={page:1,size:20};
 function paginate(rows,pager,st,onClick){const pages=Math.max(1,Math.ceil(rows.length/st.size));st.page=Math.min(pages,Math.max(1,st.page));const start=(st.page-1)*st.size;pager.innerHTML=`<span class="small">${rows.length?fmt(start+1)+'–'+fmt(Math.min(rows.length,start+st.size)):0} از ${fmt(rows.length)} سند</span><span><button type="button" class="v13-button" data-page-step="-1" ${st.page===1?'disabled':''}>قبلی</button> <select aria-label="تعداد نمایش" data-page-size style="width:auto;min-height:36px"><option ${st.size===20?'selected':''} value="20">۲۰ تایی</option><option ${st.size===50?'selected':''} value="50">۵۰ تایی</option></select> <button type="button" class="v13-button" data-page-step="1" ${st.page===pages?'disabled':''}>بعدی</button></span>`;pager.querySelectorAll('[data-page-step]').forEach(b=>b.addEventListener('click',()=>{st.page+=Number(b.dataset.pageStep);onClick()}));pager.querySelector('[data-page-size]').addEventListener('change',e=>{st.size=+e.target.value;st.page=1;onClick()});return rows.slice(start,start+st.size)}
 function accountsListing(){const q=norm($('v13-account-search').value),cat=$('v13-account-category').value;const arr=accounts.filter(a=>(!q||norm(a.name).includes(q)||norm(a.phone).includes(q))&&(!cat||populateCategory(a)===cat)).sort((a,b)=>a.name.localeCompare(b.name,'fa'));const page=paginate(arr,$('v13-account-pager'),listState,accountsListing);
  $('v13-account-list').innerHTML=page.map((a,i)=>`<button class="v13-account-row" data-open-account="${safe(a.name)}"><span class="v13-avatar" style="background:${alphabet[categories.indexOf(populateCategory(a))%alphabet.length]||'#439b7a'}">${safe(a.name.slice(0,1))}</span><span class="v13-account-info"><span class="v13-account-name">${safe(a.name)}</span><span class="v13-category">${safe(populateCategory(a))}${a.phone?' • '+safe(a.phone):''}</span><span class="v13-balances">${balanceMarkup(a.name,false)}</span></span></button>`).join('')||'<div class="small">حسابی پیدا نشد.</div>';}
-function ledgerRow(r,withActions=false){const cur=r.currency||'AFN';return `<tr><td><strong>${safe(dateText(r.date))}</strong><div class="v13-mini">${safe(r.documentNo||r.id?.slice(0,8)||'—')}</div></td><td>${safe(r.note||(r.hawalaKind?methods[r.hawalaKind]:(r.mode==='exchange'?'تبادله':r.mode==='darak'?'درک':'روزنامچه')))}${r.hawalaRole==='fee'?'<div class="v13-mini">مفاد</div>':''}</td><td class="v13-credit">${r.type==='debt'?fmt(r.amount)+' '+safe(cur):'—'}</td><td class="v13-debit">${r.type==='payment'?fmt(r.amount)+' '+safe(cur):'—'}</td><td>${fmt(r.closingBalance)} ${safe(cur)}</td>${withActions?`<td><div class="rowbuttons"><button class="v13-button" type="button" data-v13-edit="${safe(r.id)}">ویرایش</button><button class="v13-button danger" type="button" data-v13-delete="${safe(r.id)}">حذف</button></div></td>`:''}</tr>`}
+function ledgerRow(r,withActions=false){const cur=r.currency||'AFN';return `<tr><td><strong>${safe(dateText(r.date))}</strong><div class="v13-mini">${safe(r.documentNo||r.id?.slice(0,8)||'—')}</div></td><td>${safe(r.note||(r.hawalaKind?methods[r.hawalaKind]:(r.mode==='exchange'?'تبادله':r.mode==='darak'?'درک':'روزنامچه')))}${r.hawalaRole==='fee'?'<div class="v13-mini">مفاد</div>':''}</td><td class="v16-outflow">${r.type==='debt'?fmt(r.amount)+' '+safe(cur):'—'}</td><td class="v16-inflow">${r.type==='payment'?fmt(r.amount)+' '+safe(cur):'—'}</td><td>${fmt(r.closingBalance)} ${safe(cur)}</td>${withActions?`<td><div class="rowbuttons"><button class="v13-button" type="button" data-v13-edit="${safe(r.id)}">ویرایش</button><button class="v13-button danger" type="button" data-v13-delete="${safe(r.id)}">حذف</button></div></td>`:''}</tr>`}
 function allAccountDocs(name,cur){return ledger(accountSource(name).filter(r=>(!cur||(r.currency||'AFN')===cur)));}
 function detail(){if(!state.account)return;const a=currentAccount();if(!a)return;const vals=allAccountDocs(state.account);$('v13-detail-title').textContent=a.name;$('v13-detail-meta').textContent=populateCategory(a)+(a.phone?' • '+a.phone:'');$('v13-detail-balances').innerHTML=balanceMarkup(a.name);
  const isSarraf=populateCategory(a)==='صراف';$('v13-account-action-menu').innerHTML=`<button class="v13-button" data-v13-navigate="journal">روزنامچه</button><button class="v13-button" data-v13-navigate="exchange">تبادله</button>${isSarraf?'<button class="v13-button" data-v13-navigate="hawalaIn">حواله وارده</button><button class="v13-button" data-v13-navigate="hawalaOut">حواله صادره</button>':''}`;
@@ -74,13 +93,14 @@ function addHawala(kind){const p=`v13-${kind}`,account=$(p+'-account').value.tri
  if(mode==='darak'&&(!accounts.some(a=>a.name===peer)||peer===account)){ $(p+'-status').textContent='حساب مقابل درک معتبر نیست.';return }
  // A remittance is atomic: two principal postings plus its fee postings.
  const editing=state.hwEdit,oldGroup=editing?records.filter(r=>r.transferId===editing):[],id=editing||makeId(),doc=editing?(oldGroup[0]?.documentNo):(window.MC14?.getNextDoc?.(kind,account)||((kind==='in'?'IN-':'OUT-')+String(Date.now()).slice(-10))),stamp=oldGroup[0]?.createdAt||new Date().toISOString(),mainType=kind==='in'?'debt':'payment',otherType=kind==='in'?'payment':'debt',otherAccount=mode==='treasury'?'خزانه':mode==='unpaid'?'پرداخت نشده':peer;
+ if(records.some(r=>r.hawalaRole==='principal'&&r.name===account&&r.hawalaKind===kind&&r.documentNo===doc&&r.transferId!==id)){ $(p+'-status').textContent='شمارهٔ حواله در این حساب قبلاً ثبت شده است.';return }
  if(window.MC14?.beforeHawalaSave && window.MC14.beforeHawalaSave({kind,account,amount,cur,converted,targetCur,mode,fee,feeCur})===false){$(p+'-status').textContent='معامله مطابق تنظیمات حد بدهکاری یا کنترل حساب پذیرفته نشد.';return}
  const base={hawalaRate:rate,hawalaOperation:operation,hawalaMethod:mode,hawalaSourceCurrency:cur,hawalaSettlementCurrency:targetCur,hawalaFee:fee,hawalaFeeCurrency:feeCur,...(window.MC14?.hawalaMetadata?.(kind)||{})};
- const batch=[hawalaRecord(kind,account,amount,cur,mainType,'principal',doc,id,date,note,stamp,base),hawalaRecord(kind,otherAccount,converted,targetCur,otherType,'settlement',doc,id,date,note,stamp,base)];
+ const batch=[hawalaRecord(kind,account,amount,cur,mainType,'principal',doc,id,date,note,stamp,{...base,documentId:id}),hawalaRecord(kind,otherAccount,converted,targetCur,otherType,'settlement',doc,id,date,note,stamp,{...base,documentId:id})];
  if(fee>0){
-   if(kind==='in')batch.push(hawalaRecord(kind,account,fee,feeCur,'payment','fee-deduction',doc,id,date,`کسر مفاد ${doc}`,stamp,base));
-   else batch.push(hawalaRecord(kind,'خزانه',fee,feeCur,'debt','fee-cash',doc,id,date,`دریافت مفاد ${doc}`,stamp,base));
-   batch.push(hawalaRecord(kind,'مفاد',fee,feeCur,'debt','fee-profit',doc,id,date,`مفاد ${doc}`,stamp,base));
+   if(kind==='in')batch.push(hawalaRecord(kind,account,fee,feeCur,'payment','fee-deduction',doc,id,date,`کسر مفاد ${doc}`,stamp,{...base,documentId:id}));
+   else batch.push(hawalaRecord(kind,'خزانه',fee,feeCur,'debt','fee-cash',doc,id,date,`دریافت مفاد ${doc}`,stamp,{...base,documentId:id}));
+   batch.push(hawalaRecord(kind,'مفاد',fee,feeCur,'debt','fee-profit',doc,id,date,`مفاد ${doc}`,stamp,{...base,documentId:id}));
  }
  const prev=[...records],oldAccounts=[...accounts];if(editing){if(!oldGroup.length){$(p+'-status').textContent='سند اصلی برای ویرایش پیدا نشد.';return}records=records.filter(r=>r.transferId!==editing)}if(!accounts.some(a=>a.name==='مفاد'))accounts.push({id:makeId(),name:'مفاد',category:'مصارف',system:true});records.push(...batch);
  if(!save()){records=prev;accounts=oldAccounts;$(p+'-status').textContent='خطا در ذخیره سند حواله';return}persistMeta();reconcileAccounts();render();window.MC14?.afterHawalaSave?.({kind,account,doc,editing:!!editing});$(p+'-form').reset();resetHawala(kind);$(p+'-status').textContent=`${methods[kind]} با شماره ${doc} ${editing?'ویرایش':'ثبت'} شد.`;

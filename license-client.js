@@ -10,6 +10,24 @@
  const statusBox=$('licenseStatusBox'),settingsInfo=$('licenseSettingsInfo'),adminPanel=$('licenseAdminPanel');
  const authArea=$('licenseAuthArea');
  let client=null,userId=null,latest=null,admin=false,refreshing=false,lastCheck=0;
+  // Bounded device-local offline grace. The backend remains authoritative online.
+  const OFFLINE_KEY='hesabket.offline-license.v16',GRACE_MS=7*24*60*60*1000;
+  const cached=()=>{try{const x=JSON.parse(localStorage.getItem(OFFLINE_KEY)||'null');return x&&/^[a-f0-9-]{36}$/i.test(x.userId)?x:null}catch{return null}};
+  const rememberOnline=(status)=>{if(!userId||!status)return;const expires=status.kind==='paid'?status.paidUntil:status.trialEndsAt;try{localStorage.setItem(OFFLINE_KEY,JSON.stringify({userId,verifiedAt:Date.now(),canWrite:status.canWrite===true,kind:status.kind,expiresAt:expires||null}))}catch{}};
+  function tryOffline(){const c=cached();if(!c)return false;const now=Date.now();
+   // Clock rollback, expired license or stale server validation never grants offline edits.
+   if(!Number.isFinite(c.verifiedAt)||now<c.verifiedAt||now-c.verifiedAt>GRACE_MS)return false;
+   if(!userId)userId=c.userId;
+   if(userId!==c.userId)return false;
+   if(typeof window.licenseSwitchUser==='function')window.licenseSwitchUser(c.userId);
+   const expireAt=Date.parse(c.expiresAt||'');
+   const active=c.canWrite===true&&Number.isFinite(expireAt)&&now<expireAt;
+   latest={kind:c.kind,canWrite:active,daysLeft:Math.max(0,Math.floor((expireAt-now)/86400000))};
+   settingsInfo.textContent=active?'آفلاین · دسترسی موقت تا اتصال بعدی':'آفلاین · فقط مشاهده و پشتیبان‌گیری';
+   if($('licenseStatusText'))$('licenseStatusText').textContent=settingsInfo.textContent;
+   statusBox.hidden=false;authArea.hidden=true;adminPanel.hidden=true;
+   allowApp(active);return true;
+  }
  const tell=(t,bad=false)=>{message.textContent=t;message.classList.toggle('lic-error',bad)};
  function showOverlay(){node.hidden=false;document.body.classList.remove('license-authorized')}
  function allowApp(writable){window.LICENSE_CAN_WRITE=Boolean(writable);document.body.classList.add('license-authorized');node.hidden=true;document.body.classList.toggle('license-readonly',!writable);$('licenseReadOnlyRibbon').hidden=Boolean(writable);}
@@ -29,7 +47,7 @@
   if(!force&&Date.now()-lastCheck<10000)return;
   refreshing=true;
   try{
-   const data=await request('status');lastCheck=Date.now();latest=data.status;admin=Boolean(data.isAdmin);
+   const data=await request('status');lastCheck=Date.now();latest=data.status;admin=Boolean(data.isAdmin);rememberOnline(latest);
    window.LICENSE_CAN_WRITE=Boolean(latest.canWrite);
    const exp=latest.kind==='paid'?'اشتراک فعال':latest.kind==='trial'?'نسخهٔ آزمایشی':latest.kind==='suspended'?'حساب مسدود است':'مدت استفاده پایان یافته';
    const end=latest.kind==='paid'?latest.paidUntil:latest.trialEndsAt;
@@ -41,7 +59,7 @@
    $('licenseReadonlyBtn').hidden=latest.canWrite;
    adminPanel.hidden=!admin;
    if(latest.canWrite){allowApp(true)}else {window.LICENSE_CAN_WRITE=false;showOverlay();tell('مدت اشتراک پایان یافته است. کلید فعال‌سازی وارد کنید یا اطلاعات قبلی را فقط مشاهده و خروجی بگیرید.');}
-  }catch(e){window.LICENSE_CAN_WRITE=false;showOverlay();tell('وضعیت لایسنس از سرور تأیید نشد: '+e.message,true)}
+  }catch(e){if((!navigator.onLine||/failed to fetch|networkerror|network request failed|internet|network is unreachable/i.test(String(e.message||'')))&&tryOffline()){tell('حالت آفلاین: اطلاعات ورود قبلی حفظ شد.');return}window.LICENSE_CAN_WRITE=false;showOverlay();tell('وضعیت لایسنس از سرور تأیید نشد: '+e.message,true)}
   finally{refreshing=false}
  }
  async function login(mode){
@@ -53,7 +71,7 @@
   await onSession(result.data.session);
  }
  async function onSession(session){
-  if(!session?.user){resetApp();return}
+  if(!session?.user){if(!navigator.onLine&&tryOffline())return;resetApp();return}
   if(userId!==session.user.id){userId=session.user.id;
    // Per-user namespaced local data. Legacy migration is opt-in and owner-bound.
    if(typeof window.licenseSwitchUser==='function')window.licenseSwitchUser(userId);
@@ -71,14 +89,14 @@
  }
  async function installAuth(){
   if(!configured){tell('برای راه‌اندازی سیستم لایسنس ابتدا Supabase را متصل کنید. دستورالعمل در فایل README-V12.md قرار دارد.',true);$('licenseSignIn').disabled=true;$('licenseSignUp').disabled=true;return}
-  if(!window.supabase?.createClient){tell('کتابخانهٔ اتصال بارگذاری نشد. اینترنت یا مسدودبودن CDN را بررسی کنید.',true);return}
+  if(!window.supabase?.createClient){if(tryOffline()){tell('آفلاین: برنامه با تأیید قبلی در همین دستگاه باز شد.');return}tell('کتابخانهٔ اتصال بارگذاری نشد. اینترنت یا مسدودبودن CDN را بررسی کنید.',true);return}
   client=window.supabase.createClient(config.supabaseUrl,config.publicAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   client.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>onSession(session).catch(e=>tell(e.message,true)),0)});
-  const {data,error}=await client.auth.getSession();if(error){tell(error.message,true);return}await onSession(data.session);
+  const {data,error}=await client.auth.getSession();if(error){if(!navigator.onLine&&tryOffline())return;tell(error.message,true);return}await onSession(data.session);
  }
  $('licenseSignIn').addEventListener('click',()=>login('signin').catch(e=>tell(e.message,true)));
  $('licenseSignUp').addEventListener('click',()=>login('signup').catch(e=>tell(e.message,true)));
- $('licenseLogout').addEventListener('click',async()=>{if(client)await client.auth.signOut();resetApp()});
+ $('licenseLogout').addEventListener('click',async()=>{try{if(client)await client.auth.signOut()}catch(e){}localStorage.removeItem(OFFLINE_KEY);resetApp()});
  $('licenseActivate').addEventListener('click',()=>redeem($('licenseKey')));
  $('licenseSettingsActivate').addEventListener('click',()=>redeem($('licenseSettingsKey')));
  $('licenseReadonlyBtn').addEventListener('click',()=>{allowApp(false);document.body.classList.add('license-readonly');});
