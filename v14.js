@@ -83,7 +83,7 @@ function drawAccountSettings(){const a=C.accounts.find(a=>a.name===selectedAccou
 function accountSettingsButton(){const detail=$('v13-detail');if(!detail)return;let b=$('v14-account-setting-btn');if(!b){b=document.createElement('button');b.id='v14-account-setting-btn';b.type='button';b.className='v14-button';b.textContent='⚙ تنظیمات حساب';$('v13-account-action-menu').append(b);b.onclick=()=>openAccountSettings(C.state.account);}else if(b.parentElement!==$('v13-account-action-menu'))$('v13-account-action-menu').append(b);b.hidden=C.accounts.find(a=>a.name===C.state.account)?.category!=='صراف'}
 C.getNextDoc=function(kind,account){const r=rule(account),prefix=kind==='in'?'IN':'OUT';let next=Math.max(1,Number(r.sequence[kind])||1),id;do{id=`${prefix}-${String(next).padStart(5,'0')}`;next++}while(C.records.some(x=>x.name===account&&x.hawalaRole==='principal'&&x.hawalaKind===kind&&x.documentNo===id));return id};
 C.afterHawalaSave=function({kind,account,doc,editing}){if(editing)return;const n=Number(doc.split('-').at(-1));const r=rule(account);if(Number.isSafeInteger(n))r.sequence[kind]=Math.max(r.sequence[kind]||1,n+1);saveMeta()};
-C.beforeHawalaSave=function({kind,account,amount,cur,converted,targetCur,fee,feeCur}){const r=rule(account);if(r.activeCurrencies?.[cur]===false){alert('این ارز در تنظیمات صراف غیرفعال است.');return false}
+C.beforeHawalaSave=function({kind,account,amount,cur,converted,targetCur,fee,feeCur,peerFee=0}){const r=rule(account);if(r.activeCurrencies?.[cur]===false){alert('این ارز در تنظیمات صراف غیرفعال است.');return false}
  const previous=C.state.hwEdit?C.records.filter(x=>x.transferId===C.state.hwEdit):[];
  const previouslyPaid=C.state.hwEdit?C.records.filter(x=>x.mode==='hawala-settlement'&&x.originalHawalaId===C.state.hwEdit&&x.name==='پرداخت نشده').reduce((n,x)=>n+x.amount,0):0;
  if(previouslyPaid>0){const original=previous.find(x=>x.hawalaRole==='settlement');if(original&&(original.name!==('پرداخت نشده')||original.currency!==targetCur||converted+0.00001<previouslyPaid)){alert('این حواله پرداخت ثبت‌شده دارد؛ نوع حساب، ارز یا مقدار مبادله را نمی‌توان به کمتر از مجموع پرداخت‌ها تغییر داد.');return false}}
@@ -92,14 +92,13 @@ C.beforeHawalaSave=function({kind,account,amount,cur,converted,targetCur,fee,fee
  const bal=Number(C.actualBalances(account).find(([c])=>c===cur)?.[1]||0);
  const oldMain=previous.find(x=>x.hawalaRole==='principal'&&x.name===account&&x.currency===cur);
  const oldFee=previous.find(x=>x.hawalaRole==='fee-deduction'&&x.name===account&&x.currency===cur);
- const oldEffect=(oldMain?(oldMain.type==='debt'?oldMain.amount:-oldMain.amount):0)-(oldFee?.amount||0);
- const newBal=bal-oldEffect+(kind==='in'?amount:-amount)-(kind==='in'&&feeCur===cur?fee:0);
- if(newBal>cap){alert(`حد بدهکاری صراف برای ${cur} برابر ${F(cap)} است. مانده پس از این معامله ${F(newBal)} خواهد شد.`);return false}return true};
+ const oldEffect=previous.filter(x=>x.name===account&&x.currency===cur).reduce((n,x)=>n+C.delta(x),0);
+ const newBal=bal-oldEffect+(kind==='in'?amount:-amount)-(feeCur===cur?(fee+peerFee):0);
+ if(newBal < -cap){alert(`حد بدهکاری صراف برای ${cur} برابر ${F(cap)} است. مانده پس از این معامله ${F(newBal)} خواهد شد.`);return false}return true};
 C.hawalaMetadata=function(kind){const prefix='v13-'+kind;return {senderName:$(prefix+'-sender')?.value?.trim()||'',receiverName:$(prefix+'-receiver')?.value?.trim()||'',trackingRef:$(prefix+'-tracking')?.value?.trim()||'',hawalaSource:$(prefix+'-source')?.value?.trim()||''}};
 function hawalaEnhance(){for(const kind of ['in','out']){const p='v13-'+kind,form=$(p+'-form');if(!form||$(p+'-sender'))continue;
-const note=$(p+'-note').closest('.field');note.insertAdjacentHTML('beforebegin',`<div class="field"><label>فرستنده</label><input id="${p}-sender" placeholder="نام فرستنده" maxlength="100"/></div><div class="field"><label>گیرنده</label><input id="${p}-receiver" placeholder="نام گیرنده" maxlength="100"/></div><div class="field"><label>شماره حواله / مرجع بیرونی</label><input id="${p}-tracking" maxlength="65" placeholder="اختیاری"/></div><div class="field"><label>منبع / نمایندگی</label><input id="${p}-source" maxlength="100" placeholder="اختیاری"/></div>`);
-let field=$(p+'-fee');field.insertAdjacentHTML('afterend',`<button type="button" class="v14-small-button" id="${p}-fee-default">اعمال مفاد پیش‌فرض</button>`);
-$(p+'-fee-default').onclick=()=>{const a=$(p+'-account').value.trim(),cur=$(p+'-currency').value,fee=rule(a).fees?.[cur],amount=int($(p+'-amount').value);if(!fee)return;$(p+'-fee').value=window.MC16?.feeAmount?.(amount,fee)??(amount>0&&fee.threshold>0?Math.ceil(amount/fee.threshold)*fee.value:0);$(p+'-fee-currency').value=cur};
+const note=$(p+'-note').closest('.field');note.insertAdjacentHTML('beforebegin',`<div class="field"><label>فرستنده</label><input id="${p}-sender" placeholder="نام فرستنده" maxlength="100"/></div><div class="field"><label>گیرنده</label><input id="${p}-receiver" placeholder="نام گیرنده" maxlength="100"/></div><div class="field"><label>شماره حواله / مرجع بیرونی</label><input id="${p}-tracking" maxlength="65" placeholder="اختیاری"/></div>`);
+
 }
 }
 // Transfer of previously registered unpaid incoming hawala to treasury, with partial payments.

@@ -41,6 +41,3 @@ label.v16-mode-out{background:var(--v16-red-bg)!important;color:#a52237!importan
 .v15-daily-table th:nth-child(4),.v15-daily-table td:nth-child(4),#v15-report-table th:nth-child(4){color:var(--v16-red)!important}
 .v15-daily-table th:nth-child(5),.v15-daily-table td:nth-child(5),#v15-report-table th:nth-child(5){color:var(--v16-green)!important}
 .v14-recent .v14-amount.credit{color:var(--v16-red)}.v14-recent .v14-amount.debit{color:var(--v16-green)}
-
-/* Mobile-only quick-add navigation */
-@media(min-width:901px){#menuToggle{display:none!important}.menu-shell:has(#menuToggle){pointer-events:none}.menu-shell #mainMenu{pointer-events:auto}}
