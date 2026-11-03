@@ -114,6 +114,7 @@ function addHawala(kind){const p=`v13-${kind}`,account=$(p+'-account').value.tri
    batch.push(hawalaRecord(kind,account,peerFee,feeCur,'debt','fee-peer-debit',doc,id,date,`مفاد صراف ${peer}`,stamp,{...base,documentId:id,ledgerDelta:-peerFee}));
    batch.push(hawalaRecord(kind,peer,peerFee,feeCur,'payment','fee-peer-credit',doc,id,date,`مفاد صراف ${peer}`,stamp,{...base,documentId:id,ledgerDelta:peerFee}));
  }
+ if(window.MC18&&!window.MC18.checkCashBatch(batch,oldGroup,'حواله '+methods[kind])){$(p+'-status').textContent='موجودی خزانه کافی نیست.';return}
  const prev=[...records],oldAccounts=[...accounts];if(editing){if(!oldGroup.length){$(p+'-status').textContent='سند اصلی برای ویرایش پیدا نشد.';return}records=records.filter(r=>r.transferId!==editing)}if(!accounts.some(a=>a.name==='مفاد'))accounts.push({id:makeId(),name:'مفاد',category:'مصارف',system:true});records.push(...batch);
  if(!save()){records=prev;accounts=oldAccounts;$(p+'-status').textContent='خطا در ذخیره سند حواله';return}persistMeta();reconcileAccounts();render();window.MC14?.afterHawalaSave?.({kind,account,doc,editing:!!editing});$(p+'-form').reset();resetHawala(kind);$(p+'-status').textContent=`${methods[kind]} با شماره ${doc} ${editing?'ویرایش':'ثبت'} شد.`;
 }

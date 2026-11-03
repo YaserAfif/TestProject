@@ -17,7 +17,7 @@
  // Keep importer in Settings only. No buttons in the top bar, dashboard or sidebar.
  function cleanNavigation(){document.querySelectorAll('#v14-appbar [data-v15-import],#v14-sidebar [data-v15-import],#v15-quickbar [data-v15-dash-import]').forEach(el=>el.remove());}
  // Unpaid-remittance operations remain accessible inside the "پرداخت نشده" account.
- function cleanAccountList(){$('v14-pending')?.remove();}
+ function cleanAccountList(){const p=$('v14-pending');if(p&&C.state.account!=='پرداخت نشده')p.remove();}
  // Pin a chosen account on repeated submissions, including changing the pinned account.
  function installPin(formId,accountId){
   const form=$(formId),field=$(accountId);if(!form||!field||field.dataset.v17Pin)return;
