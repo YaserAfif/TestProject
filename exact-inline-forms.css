@@ -1,0 +1,45 @@
+/* v16 Exact-inspired single-row financial forms — responsive and RTL */
+:root{--exact-line:#dce6e9;--exact-blue:#087f9d;--exact-green:#278a48;--exact-red:#c93643}
+#page-journal .journal-card,#page-exchange .exchange-card,.v13-hawala-in,.v13-hawala-out{max-width:none!important;width:100%!important;padding:14px 18px!important;background:#fff!important;border:1px solid var(--exact-line);border-radius:9px;box-shadow:0 5px 18px #1d4d5a0a}
+#page-journal .journal-card>h2,#page-exchange .exchange-title,.v13-hawala-in .v13-top,.v13-hawala-out .v13-top{border-bottom:1px solid var(--exact-line);padding-bottom:10px;margin-bottom:12px}
+#entryForm .journal-stack{display:grid!important;grid-template-columns:minmax(180px,2fr) minmax(240px,2fr) minmax(150px,1fr) minmax(220px,2fr);align-items:end;gap:10px 16px}
+#entryForm .journal-stack>.account-select{grid-column:1;grid-row:1}
+#entryForm .journal-stack>.amount-row{grid-column:2;grid-row:1;display:grid!important;grid-template-columns:minmax(90px,1fr) 74px minmax(90px,1fr);gap:5px;align-items:end}
+#entryForm .journal-stack>.date-block{grid-column:3;grid-row:1}
+#entryForm .journal-stack>.field:has(#note){grid-column:4;grid-row:1}
+#entryForm .journal-stack>.mode-block{grid-column:1/-1;grid-row:2;border-top:1px solid var(--exact-line);padding-top:12px}
+#entryForm .journal-stack>.darak-select{grid-column:1/3;grid-row:3}
+#entryForm button[type=submit],#exchangeForm button[type=submit],.v13-forms button[type=submit]{width:auto!important;min-width:126px!important;margin:12px 0 0!important;padding:10px 18px!important;background:var(--exact-blue)!important}
+#entryForm .field,#exchangeForm .field,.v13-forms .field{min-width:0;margin:0!important}
+#entryForm input,#entryForm select,#exchangeForm input,#exchangeForm select,.v13-forms input:not([type=radio]),.v13-forms select{height:38px!important;min-height:38px!important;border:0!important;border-bottom:1px solid #cad7dc!important;border-radius:3px!important;background:#fff!important;padding:5px 8px!important;width:100%;font-size:14px!important}
+#entryForm .field>label,#exchangeForm .field>label,.v13-forms .field>label{font-size:12px!important;color:#60747d!important;font-weight:650;margin-bottom:5px;display:block}
+#entryForm #gotAmount,.v13-hawala-in input[id$="-amount"]{color:var(--exact-red);font-weight:750}
+#entryForm #talabAmount,.v13-hawala-out input[id$="-amount"]{color:var(--exact-green);font-weight:750}
+#entryForm .entrymodes,#exchangeForm .entrymodes,.v13-forms .v13-mode{display:flex!important;gap:7px;flex-wrap:wrap;align-items:center}
+#entryForm .entrymodes label,#exchangeForm .entrymodes label,.v13-forms .v13-mode label{border:1px solid #d8e3e6;border-radius:24px;padding:6px 14px;background:#fff;cursor:pointer;white-space:nowrap}
+#entryForm .entrymodes label:has(input:checked),#exchangeForm .entrymodes label:has(input:checked),.v13-forms .v13-mode label:has(input:checked){background:#e5f7ec!important;border-color:#54ad77!important;color:#16723c!important;font-weight:800}
+#entryForm .entrymodes:has(#gotAmount:focus) label:has(input:checked){background:#fce9eb}
+.v13-hawala-in{border-top:4px solid var(--exact-red)!important}.v13-hawala-out{border-top:4px solid var(--exact-green)!important}
+.v13-hawala-in .v13-top h2{color:var(--exact-red)}.v13-hawala-out .v13-top h2{color:var(--exact-green)}
+.v13-hawala-in .v13-forms,.v13-hawala-out .v13-forms{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px 14px!important;align-items:end}
+.v13-forms>.field.v13-full{grid-column:span 2!important}
+.v13-forms>.field:has(input[id$="-account"]){grid-column:span 2!important}
+.v13-forms>.field:has(input[id$="-note"]){grid-column:span 4!important}
+.v13-forms>.field:has(.v13-mode){grid-column:1/-1!important;border-top:1px solid var(--exact-line);padding-top:12px}
+.v13-forms>.field[id$="-darak-wrap"]{grid-column:span 2!important}
+.v13-forms>.v13-form-submit{grid-column:1/-1!important;justify-self:start}
+.v13-hawala-in .v13-mode label:has(input:checked){background:#ffeaed!important;color:#b52c3a!important;border-color:#e6a3aa!important}
+.v13-hawala-out .v13-mode label:has(input:checked){background:#e5f7ec!important;color:#16723c!important}
+#exchangeForm{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px 14px;align-items:end}
+#exchangeForm>.field:has(#exchangeFromAccount){grid-column:span 2}
+#exchangeForm>.exchange-pair{grid-column:span 2;display:grid!important;grid-template-columns:minmax(0,2fr) minmax(70px,1fr);gap:7px;align-items:end}
+#exchangeForm>.exchange-rate-controls{grid-column:span 2;display:grid!important;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
+#exchangeForm>.exchange-arrow{display:none!important}
+#exchangeForm>.field:has(#exchangeDate){grid-column:span 2}
+#exchangeForm>.field:has(#exchangeNote){grid-column:span 4}
+#exchangeForm>.field.mode-block{grid-column:1/-1;border-top:1px solid var(--exact-line);padding-top:12px}
+#exchangeForm>.exchange-rate,#exchangeForm>.exchange-darak,#exchangeForm>.status{grid-column:span 3}
+#exchangeForm>#exchangeSubmit,#exchangeForm>#exchangeCancel{grid-column:1/-1;justify-self:start}
+#exchangeForm #exchangeCancel{width:auto!important}
+@media(max-width:1150px){#entryForm .journal-stack{grid-template-columns:repeat(2,minmax(0,1fr))}#entryForm .journal-stack>.account-select{grid-column:1;grid-row:auto}#entryForm .journal-stack>.amount-row{grid-column:2;grid-row:auto}#entryForm .journal-stack>.date-block{grid-column:1;grid-row:auto}#entryForm .journal-stack>.field:has(#note){grid-column:2;grid-row:auto}#entryForm .journal-stack>.mode-block{grid-column:1/-1;grid-row:auto}.v13-hawala-in .v13-forms,.v13-hawala-out .v13-forms,#exchangeForm{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:680px){#page-journal .journal-card,#page-exchange .exchange-card,.v13-hawala-in,.v13-hawala-out{padding:12px!important}#entryForm .journal-stack,.v13-hawala-in .v13-forms,.v13-hawala-out .v13-forms,#exchangeForm{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#entryForm .journal-stack>.account-select,#entryForm .journal-stack>.amount-row,#entryForm .journal-stack>.date-block,#entryForm .journal-stack>.field:has(#note){grid-column:1/-1!important;grid-row:auto!important}#entryForm .journal-stack>.mode-block{grid-column:1/-1!important}.v13-forms>.field.v13-full,.v13-forms>.field:has(input[id$="-note"]),.v13-forms>.field:has(input[id$="-account"]){grid-column:1/-1!important}#exchangeForm>.field:has(#exchangeFromAccount),#exchangeForm>.exchange-pair,#exchangeForm>.exchange-rate-controls,#exchangeForm>.field:has(#exchangeDate),#exchangeForm>.field:has(#exchangeNote){grid-column:1/-1!important}#exchangeForm>.exchange-rate-controls{grid-template-columns:1fr 1fr!important}#entryForm .journal-stack>.darak-select{grid-column:1/-1!important}}
