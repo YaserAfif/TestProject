@@ -99,7 +99,7 @@ function addHawala(kind){const p=`v13-${kind}`,account=$(p+'-account').value.tri
  const batch=[hawalaRecord(kind,account,amount,cur,mainType,'principal',doc,id,date,note,stamp,{...base,documentId:id}),hawalaRecord(kind,otherAccount,converted,targetCur,otherType,'settlement',doc,id,date,note,stamp,{...base,documentId:id})];
  if(fee>0){
    if(kind==='in')batch.push(hawalaRecord(kind,account,fee,feeCur,'payment','fee-deduction',doc,id,date,`کسر مفاد ${doc}`,stamp,{...base,documentId:id}));
-   else batch.push(hawalaRecord(kind,'خزانه',fee,feeCur,'debt','fee-cash',doc,id,date,`دریافت مفاد ${doc}`,stamp,{...base,documentId:id}));
+   else batch.push(hawalaRecord(kind,account,fee,feeCur,'payment','fee-deduction',doc,id,date,`دریافت مفاد ${doc}`,stamp,{...base,documentId:id}));
    batch.push(hawalaRecord(kind,'مفاد',fee,feeCur,'debt','fee-profit',doc,id,date,`مفاد ${doc}`,stamp,{...base,documentId:id}));
  }
  const prev=[...records],oldAccounts=[...accounts];if(editing){if(!oldGroup.length){$(p+'-status').textContent='سند اصلی برای ویرایش پیدا نشد.';return}records=records.filter(r=>r.transferId!==editing)}if(!accounts.some(a=>a.name==='مفاد'))accounts.push({id:makeId(),name:'مفاد',category:'مصارف',system:true});records.push(...batch);
