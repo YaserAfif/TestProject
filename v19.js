@@ -4,7 +4,7 @@
  */
 (()=>{'use strict';
  const C=window.MC14,$=id=>document.getElementById(id);if(!C)return;
- const VERSION='19.1.0';
+ const VERSION='19.0.0';
  const epsilon=1e-7;
  const number=n=>Number(n)||0;
  // Match the physical treasury projection used by v13.accountSource('خزانه').
@@ -53,9 +53,7 @@
   if(operation)operation.disabled=same;
   if(same){rate.value='1';operation.value='multiply';const a=C.parsedAmount(amount.value);converted.value=a>0?new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(a):'';converted.readOnly=true}
   else converted.readOnly=false;
-  let hint=$(p+'-amount-hint');
-  if(!hint){hint=document.createElement('div');hint.id=p+'-amount-hint';hint.className='v19-same-hint';converted?.closest('.field')?.append(hint)}
-  hint.textContent=same?'✓ ارز یکسان: فقط یک مبلغ اصلی برای هر دو حساب ثبت می‌شود؛ نرخ ۱ است.':'مبلغ مبادله بر اساس نرخ محاسبه می‌شود و به ارز مقصد است.';
+  const hint=$(p+'-amount-hint');if(hint)hint.remove();
  }
  function adornForm(kind){
   const p='v13-'+kind,form=$(p+'-form');if(!form)return;
@@ -73,9 +71,9 @@
   syncSameCurrency(kind);
  }
  function addAppTitle(){
-  document.title='دفتر حسابات — نسخه ۱۹.۱';
+  document.title='دفتر حسابات — نسخه ۱۹';
   if($('appVersion'))$('appVersion').textContent=VERSION;
-  document.querySelectorAll('.v14-version').forEach(x=>x.textContent='نسخه ۱۹.۱');
+  document.querySelectorAll('.v14-version').forEach(x=>x.textContent='نسخه ۱۹');
  }
  function installOtherFormHeaders(){
   for(const [id,text,desc,mark] of [['entryForm','روزنامچه','ثبت گرفت و طلب در یک سند','JOURNAL'],['exchangeForm','تبادله اسعار','ثبت تبدیل ارز با نرخ دقیق و یک سند یکتا','EXCHANGE']]){
