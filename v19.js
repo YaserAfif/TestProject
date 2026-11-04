@@ -4,7 +4,7 @@
  */
 (()=>{'use strict';
  const C=window.MC14,$=id=>document.getElementById(id);if(!C)return;
- const VERSION='19.0.0';
+ const VERSION='19.1.0';
  const epsilon=1e-7;
  const number=n=>Number(n)||0;
  // Match the physical treasury projection used by v13.accountSource('خزانه').
@@ -73,9 +73,9 @@
   syncSameCurrency(kind);
  }
  function addAppTitle(){
-  document.title='دفتر حسابات — نسخه ۱۹';
+  document.title='دفتر حسابات — نسخه ۱۹.۱';
   if($('appVersion'))$('appVersion').textContent=VERSION;
-  document.querySelectorAll('.v14-version').forEach(x=>x.textContent='نسخه ۱۹');
+  document.querySelectorAll('.v14-version').forEach(x=>x.textContent='نسخه ۱۹.۱');
  }
  function installOtherFormHeaders(){
   for(const [id,text,desc,mark] of [['entryForm','روزنامچه','ثبت گرفت و طلب در یک سند','JOURNAL'],['exchangeForm','تبادله اسعار','ثبت تبدیل ارز با نرخ دقیق و یک سند یکتا','EXCHANGE']]){

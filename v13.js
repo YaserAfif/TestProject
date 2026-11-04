@@ -15,8 +15,8 @@ const allCurrencies=()=>[...new Set([...currencies,...records.map(r=>r.currency|
 const currentAccount=()=>accounts.find(a=>a.name===state.account);
 const safe=s=>esc(s);
 const ordered=rows=>rows.map((r,i)=>({...r,__originalOrder:i})).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||''))||a.__originalOrder-b.__originalOrder);
-// v16 canonical ledger: signed movements for cash and unpaid are explicit, and
-// never inferred by reversing debtor/creditor signs from ordinary accounts.
+// Signed customer postings; the unpaid queue is displayed using a VIEW-ONLY projection.
+// No physical ledger entry is created for an unpaid queue marker.
 const signedMovement=r=>recordDelta(r);
 const ledger=rows=>{const m=new Map();return ordered(rows).map(r=>{const key=r.currency||'AFN',v=(m.get(key)||0)+signedMovement(r);m.set(key,v);return {...r,closingBalance:Math.round(v*1000000)/1000000}})};
 const cashSign=r=>{
@@ -34,14 +34,21 @@ const accountSource=name=>{
   const derived=records.filter(r=>r.name!=='خزانه'&&(r.mode==='treasury'||(r.mode==='exchange'&&r.exchangeMode==='treasury'))).map(r=>{const delta=recordDelta(r);return {...r,name:'خزانه',cashOrigin:r.name,cashDelta:delta,type:delta>=0?'payment':'debt',note:'اثر خزانه: '+r.name+(r.note?' — '+r.note:'')};});
   return [...cashRows,...derived];
  }
- if(name==='پرداخت نشده')return direct.map(r=>{const delta=r.mode==='hawala'&&r.hawalaRole==='settlement'?Number(r.amount||0):r.mode==='hawala-settlement'?-Number(r.amount||0):(r.type==='payment'?1:-1)*Number(r.amount||0);return {...r,cashDelta:delta,type:delta>=0?'payment':'debt'}});
+ if(name==='پرداخت نشده')return direct.map(r=>{
+   // Display-only movements: registration increases outstanding, settlement decreases it.
+   // The raw records are bookkeeping-neutral (recordDelta returns 0).
+   const isTicket=r.mode==='hawala'&&r.hawalaRole==='settlement';
+   const isPaid=r.mode==='hawala-settlement'&&Boolean(r.originalHawalaId);
+   const delta=isTicket?Number(r.amount||0):isPaid?-Number(r.amount||0):recordDelta(r);
+   return {...r,cashDelta:delta,pendingProjection:true,type:delta>=0?'payment':'debt'};
+ });
  return direct.map(r=>{const delta=recordDelta(r);return {...r,cashDelta:delta,type:delta>=0?'payment':'debt'}});
 };
 const actualBalances=name=>{const m=new Map();for(const r of accountSource(name)){const cur=r.currency||'AFN';m.set(cur,(m.get(cur)||0)+signedMovement(r))}return [...m.entries()].map(([cur,v])=>[cur,Math.round(v*1000000)/1000000]);};
 const dateText=v=>displayDate(v);
 const methods={in:'حواله وارده',out:'حواله صادره'};
 const currencyTag=cur=>`<span class="currency-token" style="background:${currencyColor(cur)}">${safe(cur)}</span>`;
-function balanceMarkup(name,clickable=true){const values=actualBalances(name);return values.length?values.map(([cur,v])=>`<${clickable?"button":"span"} type="button" class="v13-balance ${v>=0?'is-positive':'is-negative'}" ${clickable?`data-currency-report="${safe(cur)}" data-account="${safe(name)}"`:""}>${currencyTag(cur)} <strong dir="ltr">${fmt(Math.abs(v))}</strong> ${v>0?'طلبکار':v<0?'بدهکار':'تصفیه'}</${clickable?"button":"span"}>`).join(''):'<span class="small">بدون معامله</span>';}
+function balanceMarkup(name,clickable=true){const values=actualBalances(name);return values.length?values.map(([cur,v])=>`<${clickable?"button":"span"} type="button" class="v13-balance ${v>=0?'is-positive':'is-negative'}" ${clickable?`data-currency-report="${safe(cur)}" data-account="${safe(name)}"`:""}>${currencyTag(cur)} <strong dir="ltr">${fmt(name==='پرداخت نشده'?Math.max(0,v):Math.abs(v))}</strong> ${name==='پرداخت نشده'?'ماندهٔ حواله‌های اجرا‌نشده':(v>0?'طلبکار':v<0?'بدهکار':'تصفیه')}</${clickable?"button":"span"}>`).join(''):'<span class="small">بدون معامله</span>';}
 function makeCategories(){return categories.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('')}
 function dashboard(){return `<section class="v13-panel" id="v13-home"><div class="v13-top"><h2>حساب‌های داشبورد</h2><button class="v13-button" type="button" data-v13-settings>شخصی‌سازی ⚙</button></div><div class="v13-accounts" id="v13-home-list"></div></section>`}
 function accountsView(){return `<section class="v13-panel"><div class="v13-top"><h2>حساب‌ها</h2><button type="button" class="primary" id="v13-open-new" style="width:auto;margin:0">＋ افزودن حساب</button></div><div id="v13-create" hidden><form id="v13-create-form" class="v13-forms"><div class="field v13-full"><label>نام حساب</label><input id="v13-new-name" required maxlength="100" placeholder="نام مشتری یا صراف یا شرکت"/></div><div class="field"><label>دسته‌بندی</label><select id="v13-new-category">${makeCategories()}</select></div><div class="field"><label>شماره تماس (اختیاری)</label><input id="v13-new-phone" maxlength="50"/></div><div class="field"><label>ایمیل (اختیاری)</label><input id="v13-new-email" type="email" maxlength="160"/></div><div class="field v13-full"><label>آدرس (اختیاری)</label><input id="v13-new-address" maxlength="260"/></div><button class="primary v13-full" type="submit">ذخیره حساب</button></form></div><div class="v13-toolbar"><input id="v13-account-search" placeholder="⌕ جستجو نام حساب..."/><select id="v13-account-category"><option value="">تمام دسته‌ها</option>${makeCategories()}</select></div><div class="v13-accounts" id="v13-account-list"></div><div class="v13-pager" id="v13-account-pager"></div></section>
@@ -107,14 +114,22 @@ function addHawala(kind){const p=`v13-${kind}`,account=$(p+'-account').value.tri
  if(!accounts.some(a=>a.name===account)||!Number.isFinite(amount)||amount<=0||!Number.isFinite(converted)||converted<=0||!Number.isFinite(rate)||rate<=0||!Number.isFinite(fee)||fee<0||!Number.isFinite(peerFee)||peerFee<0||!date||!currencies.includes(cur)||!currencies.includes(targetCur)||!currencies.includes(feeCur)){ $(p+'-status').textContent='حساب، ارزها، مبلغ، نرخ و تاریخ را بررسی کنید.';return }
  if(cur===targetCur && (Math.abs(converted-amount)>0.000001||Math.abs(rate-1)>0.000001||operation!=='multiply')){ $(p+'-status').textContent='برای دو طرف با ارز یکسان، مبلغ مبادله باید عین مبلغ اصلی و نرخ ۱ باشد.';return }
  if(mode==='darak'&&(!accounts.some(a=>a.name===peer)||peer===account)){ $(p+'-status').textContent='حساب مقابل درک معتبر نیست.';return }
- // A remittance is atomic: two principal postings plus its fee postings.
- const editing=state.hwEdit,oldGroup=editing?records.filter(r=>r.transferId===editing):[],id=editing||makeId(),doc=editing?(oldGroup[0]?.documentNo):(window.MC14?.getNextDoc?.(kind,account)||((kind==='in'?'IN-':'OUT-')+String(Date.now()).slice(-10))),stamp=oldGroup[0]?.createdAt||new Date().toISOString(),mainType=kind==='in'?'payment':'debt',otherType=kind==='in'?'debt':'payment',otherAccount=mode==='treasury'?'خزانه':mode==='unpaid'?'پرداخت نشده':peer;
+ // One business voucher: one sarraf principal posting, one destination effect (or status-only pending marker), plus separate fee postings.
+ const editing=state.hwEdit,oldGroup=editing?records.filter(r=>r.transferId===editing):[],id=editing||makeId(),doc=editing?(oldGroup[0]?.documentNo):(window.MC14?.getNextDoc?.(kind,account)||((kind==='in'?'IN-':'OUT-')+String(Date.now()).slice(-10))),stamp=oldGroup[0]?.createdAt||new Date().toISOString(),mainType='debt',otherType=kind==='in'?'debt':'payment',otherAccount=mode==='treasury'?'خزانه':mode==='unpaid'?'پرداخت نشده':peer;
  if(otherAccount===account){$(p+'-status').textContent='حساب اصلی و حساب مقابل نباید یکسان باشند.';return}
  if(records.some(r=>r.hawalaRole==='principal'&&r.name===account&&r.hawalaKind===kind&&r.documentNo===doc&&r.transferId!==id)){ $(p+'-status').textContent='شمارهٔ حواله در این حساب قبلاً ثبت شده است.';return }
  if(window.MC14?.beforeHawalaSave && window.MC14.beforeHawalaSave({kind,account,amount,cur,converted,targetCur,mode,fee,feeCur,peerFee:mode==='darak'?peerFee:0})===false){$(p+'-status').textContent='معامله مطابق تنظیمات حد بدهکاری یا کنترل حساب پذیرفته نشد.';return}
  const base={displayId:editing?Number(oldGroup[0]?.displayId||numericVoucherId(oldGroup[0])):undefined,hawalaPeerFee:mode==='darak'?peerFee:0,hawalaRate:rate,hawalaOperation:operation,hawalaMethod:mode,hawalaSourceCurrency:cur,hawalaSettlementCurrency:targetCur,hawalaFee:fee,hawalaFeeCurrency:feeCur,...(window.MC14?.hawalaMetadata?.(kind)||{})};
  const amountToPost=cur===targetCur?amount:converted;
- const batch=[hawalaRecord(kind,account,amount,cur,mainType,'principal',doc,id,date,note,stamp,{...base,documentId:id,ledgerDelta:kind==='in'?amount:-amount}),hawalaRecord(kind,otherAccount,amountToPost,targetCur,otherType,'settlement',doc,id,date,note,stamp,{...base,documentId:id,ledgerDelta:(kind==='in'?-amountToPost:amountToPost)})];
+ const batch=[
+  // Each source amount is debited ONCE from the sarraf; the same-currency destination is NOT another sarraf posting.
+  hawalaRecord(kind,account,amount,cur,mainType,'principal',doc,id,date,note,stamp,{...base,documentId:id,ledgerDelta:-amount,accountingModel:'queue-v19.1'}),
+  // Unpaid is a queue record only, not a creditor/debtor ledger or cash transfer.
+  hawalaRecord(kind,otherAccount,amountToPost,targetCur,otherType,'settlement',doc,id,date,note,stamp,{...base,documentId:id,ledgerDelta:mode==='unpaid'?0:(kind==='in'?-amountToPost:amountToPost),pendingOnly:mode==='unpaid',accountingModel:'queue-v19.1'})
+ ];
+ // When currencies differ, the sarraf has source currency debited and target currency credited.
+ // This is not applicable to a same-currency transfer, so it cannot double-post 1,200 AFN.
+ if(cur!==targetCur && kind==='in')batch.push(hawalaRecord(kind,account,amountToPost,targetCur,'payment','converted-credit',doc,id,date,`طلب ارز مبادله ${doc}`,stamp,{...base,documentId:id,ledgerDelta:amountToPost,accountingModel:'queue-v19.1'}));
  if(fee>0){
    batch.push(hawalaRecord(kind,account,fee,feeCur,'debt','fee-deduction',doc,id,date,`کسر مفاد ${doc}`,stamp,{...base,documentId:id,ledgerDelta:-fee}));
    batch.push(hawalaRecord(kind,'مفاد',fee,feeCur,'payment','fee-profit',doc,id,date,`مفاد ${doc}`,stamp,{...base,documentId:id,ledgerDelta:fee}));
