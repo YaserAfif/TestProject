@@ -1,0 +1,85 @@
+/* دفتر حسابات ۲۳ — clear, bank-grade financial forms, responsive RTL. */
+:root{--v23-border:#cbdbe4;--v23-sky:#f3f9fc}
+/* Professional input pairs; avoid the old boxed/floating currency selector. */
+#entryForm .v23-journal-row{
+ display:grid!important;
+ grid-template-columns:minmax(270px,2fr) minmax(350px,2.7fr) minmax(220px,1.8fr)!important;
+ gap:12px!important;align-items:end!important
+}
+#entryForm .v23-journal-head{
+ min-width:0;display:grid;grid-template-columns:minmax(118px,1fr) minmax(155px,1.6fr);
+ gap:9px;align-items:end
+}
+#entryForm .v23-journal-head>.field{min-width:0!important;grid-column:auto!important;grid-row:auto!important;display:flex!important;flex-direction:column;justify-content:flex-end}
+#entryForm .v23-journal-head .account-combobox,#entryForm .v23-journal-head .v17-date-trigger{width:100%;min-width:0}
+#entryForm .v23-journal-row>.amount-row{
+ display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+ grid-column:auto!important;grid-row:auto!important;gap:10px!important;align-items:end!important
+}
+#entryForm .v23-money-pair{display:grid;grid-template-columns:minmax(0,1fr) 75px;gap:0;align-items:end;min-width:0}
+#entryForm .v23-money-pair>.field{min-width:0!important;margin:0!important}
+#entryForm .v23-money-pair>.field input{
+ width:100%!important;border:1px solid #c9dce7!important;border-inline-end:0!important;
+ border-radius:0 10px 10px 0!important;min-height:44px;height:44px!important;
+ background:white!important;padding:8px 8px!important;box-shadow:none!important;
+ font-weight:800!important;color:#263f50!important;box-sizing:border-box
+}
+#entryForm .v23-money-pair>.field input:disabled{background:#f2f6f9!important;color:#78909d!important;opacity:.76}
+#entryForm .v23-money-currency{
+ min-width:0!important;width:75px!important;height:44px!important;min-height:44px!important;
+ padding:4px 5px!important;appearance:auto!important;text-align:center!important;
+ border:1px solid #c9dce7!important;border-radius:10px 0 0 10px!important;
+ background:#eff7fb!important;color:#0f6986!important;font-size:12px!important;font-weight:850;
+ cursor:pointer;box-sizing:border-box
+}
+#entryForm .v23-money-got>.field input{border-color:#edb3b8!important}
+#entryForm .v23-money-got>.v23-money-currency{border-color:#edb3b8!important;background:#fff1f2!important;color:#a63b48!important}
+#entryForm .v23-money-talab>.field input{border-color:#a7ddc3!important}
+#entryForm .v23-money-talab>.v23-money-currency{border-color:#a7ddc3!important;background:#edf9f1!important;color:#147548!important}
+#entryForm .v23-legacy-currency{display:none!important}
+#entryForm .v23-journal-row>.field:has(#note){grid-column:auto!important;grid-row:auto!important;min-width:0!important;align-self:end!important}
+#entryForm .v23-journal-row .field label{font-weight:750;font-size:12px;min-height:18px}
+#entryForm .v23-journal-row .field input:not(.v17-native-date){min-height:44px!important;height:44px!important;box-sizing:border-box}
+/* Peer commission is visible, yet disabled until a valid darak is chosen. */
+#v13-in-form>.v22-secondary,#v13-out-form>.v22-secondary{
+ grid-template-columns:minmax(155px,1fr) minmax(160px,1fr) minmax(105px,.75fr) minmax(200px,2.8fr)!important;
+ align-items:end!important
+}
+.v22-form .v23-sarraf-wrap{min-width:0!important}
+.v22-form .v23-sarraf-pair{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:5px;align-items:center}
+.v22-form .v23-sarraf-pair input{width:100%!important;min-width:0!important;height:44px!important;min-height:44px!important;
+ border:1px solid var(--v23-border)!important;border-radius:9px!important;padding:6px 9px!important;background:#fff!important}
+.v22-form .v23-sarraf-pair select{width:100%;min-width:0;height:44px;min-height:44px;border:1px solid var(--v23-border);border-radius:9px;
+ font-size:12px;font-weight:750;background:white;color:#24485e;padding:4px}
+#v13-in-form .v23-sarraf-wrap.v23-fee-disabled{opacity:.62}
+#v13-in-form .v23-sarraf-wrap input[disabled],#v13-in-form .v23-sarraf-wrap select[disabled]{background:#edf1f4!important;cursor:not-allowed}
+.v23-sarraf-wrap small{display:block;margin-top:4px;font-size:10px;color:#647987}
+/* Sharing customer-facing text in a standalone, easily copied surface. */
+#v23-share-area{margin:14px 0 0;padding:13px;border:1px solid #d7e3e9;border-radius:13px;background:#f5f9fc}
+#v23-share-area>label{display:block;font-size:12px;font-weight:800;margin-bottom:6px;color:#25465b}
+#v23-share-text{width:100%;min-height:175px;resize:vertical;border:1px solid #ccdae3;border-radius:10px;background:#fff;
+ font:13px/2 inherit;box-sizing:border-box;padding:11px 13px;color:#183548;white-space:pre-wrap}
+.v23-share-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+#v23-share-status{color:#17794c;font-size:12px}
+@media(max-width:1220px){
+ #entryForm .v23-journal-row{grid-template-columns:minmax(270px,1.7fr) minmax(340px,2fr)!important}
+ #entryForm .v23-journal-row>.field:has(#note){grid-column:1/-1!important}
+}
+@media(max-width:850px){
+ #entryForm .v23-journal-row{grid-template-columns:1fr!important}
+ #entryForm .v23-journal-head{grid-template-columns:minmax(110px,1fr) minmax(140px,1.6fr)!important}
+ #entryForm .v23-journal-row>.amount-row{grid-column:1/-1!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #entryForm .v23-journal-row>.field:has(#note){grid-column:1/-1!important}
+ #v13-in-form>.v22-secondary,#v13-out-form>.v22-secondary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #v13-in-form>.v22-secondary>.field:has(input[id$="-note"]),#v13-out-form>.v22-secondary>.field:has(input[id$="-note"]){grid-column:1/-1!important}
+}
+@media(max-width:420px){
+ #entryForm .v23-journal-head{grid-template-columns:minmax(110px,.9fr) minmax(135px,1.35fr)!important;gap:6px}
+ #entryForm .v23-journal-row>.amount-row{gap:7px!important}
+ #entryForm .v23-money-pair{grid-template-columns:minmax(0,1fr) 57px!important}
+ #entryForm .v23-money-currency{width:57px!important;font-size:10px!important;padding:3px 0!important}
+ #entryForm .v23-money-pair>.field input{padding:6px 3px!important;font-size:14px!important}
+}
+/* Align the date picker and account selector on precisely the same baseline. */
+#entryForm .v23-journal-head .date-subline{display:none!important}
+#entryForm .v23-journal-head>.field{align-self:end!important}

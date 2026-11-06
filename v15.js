@@ -50,9 +50,33 @@ function voucherView(r){
 function openVoucher(id){
  const r=C.records.find(x=>String(x.id)===String(id));if(!r){toast('سند پیدا نشد.','bad');return}
  const voucher=voucherView(r),g=groupFor(r),head=g.find(x=>x.hawalaRole==='principal')||r;
- const detail=dialog(`${voucher.title} · سند ${voucher.doc}`,voucher.html+`<div class="v15-actions"><button type="button" class="v15-button" id="v15-voucher-print">چاپ شکیل / ذخیره PDF</button><button type="button" class="v15-button ghost" id="v17-voucher-edit">✎ ویرایش سند</button><button type="button" class="v15-button ghost" id="v15-voucher-copy">کپی مشخصات</button></div>`);
+ const detail=dialog(`${voucher.title} · سند ${voucher.doc}`,voucher.html+`<div class="v15-actions"><button type="button" class="v15-button" id="v15-voucher-print">چاپ شکیل / ذخیره PDF</button><button type="button" class="v15-button ghost" id="v17-voucher-edit">✎ ویرایش سند</button><button type="button" class="v15-button ghost" id="v15-voucher-copy">کپی مشخصات</button><button type="button" class="v15-button ghost" id="v23-voucher-share">شریک‌سازی متن سند</button></div>`);
  $('v17-voucher-edit').onclick=()=>{close();C.editLedgerRecord(head.id||r.id)};
  $('v15-voucher-copy').onclick=()=>{const text=`${C.settings.companyV14?.name||C.settings.title||'دفتر حسابات'}\n${voucher.title}\nآی‌دی ${voucher.doc}\nتاریخ ${C.dateText(head.date)}\nمبلغ ${fmt(head.amount)} ${currency(head)}\n${head.note||''}`;navigator.clipboard?.writeText(text).then(()=>toast('مشخصات سند کپی شد.')).catch(()=>prompt('کپی مشخصات سند',text))};
+ $('v23-voucher-share').onclick=()=>{
+  const primary=g.find(x=>x.hawalaRole==='principal')||g.find(x=>x.exchangeSide==='out')||head;
+  const paired=g.find(x=>x.hawalaRole==='settlement')||g.find(x=>x.exchangeSide==='in');
+  const fee=g.filter(x=>x.hawalaRole==='fee-profit').reduce((s,x)=>s+Number(x.amount||0),0);
+  const shareText=[`*${C.settings.companyV14?.name||C.settings.title||'دفتر حسابات'}*`,`*${voucher.title}*`,
+   `آی‌دی سند: ${voucher.doc}`,`تاریخ: ${C.dateText(primary.date)}`,
+   primary.documentNo?`نمبر حواله: ${primary.documentNo}`:'',`حساب: ${primary.name}`,
+   `مبلغ: *${fmt(primary.amount)} ${currency(primary)}*`,
+   paired&&paired.currency!==primary.currency?`مقدار مبادله: ${fmt(paired.amount)} ${currency(paired)}`:'',
+   paired?`حساب مقابل: ${paired.name}`:'',
+   fee?`مفاد حواله: ${fmt(fee)} ${primary.hawalaFeeCurrency||currency(primary)}`:'',
+   primary.hawalaSarrafFee?`مفاد صراف: ${fmt(primary.hawalaSarrafFee)} ${primary.hawalaSarrafFeeCurrency||currency(primary)}`:'',
+   primary.note?`تشریحات: ${primary.note}`:''].filter(Boolean).join('\n');
+  let area=$('v23-share-area');if(!area){area=document.createElement('div');area.id='v23-share-area';
+   area.innerHTML='<label for="v23-share-text">متن قابل ویرایش سند</label><textarea id="v23-share-text" dir="rtl" rows="10" spellcheck="false"></textarea><div class="v23-share-actions"><button id="v23-copy-share" type="button" class="v15-button">کاپی متن</button><button id="v23-native-share" type="button" class="v15-button ghost">ارسال</button></div><p role="status" id="v23-share-status"></p>';
+   $('v15-modal').querySelector('.v15-dialog-content').append(area)}
+  area.hidden=false;$('v23-share-text').value=shareText;$('v23-share-text').focus();
+  $('v23-copy-share').onclick=async()=>{const text=$('v23-share-text').value;
+   try{await navigator.clipboard.writeText(text);$('v23-share-status').textContent='متن سند کاپی شد.'}
+   catch(e){$('v23-share-text').select();$('v23-share-status').textContent='متن انتخاب شد؛ Ctrl+C را بزنید.'}};
+  $('v23-native-share').onclick=async()=>{const text=$('v23-share-text').value;
+   if(navigator.share){try{await navigator.share({title:voucher.title,text})}catch(e){if(e.name!=='AbortError')$('v23-share-status').textContent='ارسال انجام نشد.'}}
+   else $('v23-copy-share').click()};
+ };
  $('v15-voucher-print').onclick=()=>printHtml(`${voucher.title} ${voucher.doc}`,voucher.print,true);
 }
 function printHtml(title,body,isReceipt=false){

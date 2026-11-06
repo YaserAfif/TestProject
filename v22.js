@@ -5,7 +5,7 @@
  */
 (()=>{'use strict';
  const C=window.MC14, $=id=>document.getElementById(id);if(!C)return;
- const VERSION='22.0.0';
+ const VERSION='23.0.0';
  const make=(tag,cls)=>{const el=document.createElement(tag);el.className=cls;return el};
  const field=id=>$(id)?.closest('.field')||null;
  const append=(parent,...children)=>children.filter(Boolean).forEach(el=>parent.append(el));
