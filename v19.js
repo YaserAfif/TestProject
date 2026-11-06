@@ -51,7 +51,7 @@
   form.classList.toggle('v19-same-currency',same);
   if(rate)rate.disabled=same;
   if(operation)operation.disabled=same;
-  if(same){rate.value='1';operation.value='multiply';const a=C.parsedAmount(amount.value);converted.value=a>0?new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(a):'';converted.readOnly=true}
+  if(same){rate.value='1';operation.value='multiply';converted.readOnly=false;}
   else converted.readOnly=false;
   const hint=$(p+'-amount-hint');if(hint)hint.remove();
  }

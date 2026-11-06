@@ -92,19 +92,29 @@ function updateAccountOptions(){const list=$('v13-account-options');list.innerHT
  const oldCur=$('v13-report-currency').value;$('v13-report-currency').innerHTML='<option value="">تمام ارزها</option>'+allCurrencies().map(c=>`<option value="${safe(c)}">${safe(c)}</option>`).join('');$('v13-report-currency').value=state.reportCurrency;
  for(const kind of ['in','out'])for(const field of ['currency','converted-currency','fee-currency']){const el=$(`v13-${kind}-${field}`),old=el.value;el.innerHTML=allCurrencies().map(c=>`<option value="${safe(c)}">${safe(c)}</option>`).join('');el.value=allCurrencies().includes(old)?old:'AFN';}}
 function formatMoneyInput(input,formatter=formatAmountTyping){const original=input.value,ix=input.selectionStart??original.length;input.value=formatter(original);try{input.setSelectionRange(formatter(original.slice(0,ix)).length,formatter(original.slice(0,ix)).length)}catch(e){}}
-function hawalaCalculate(kind,source){const prefix=`v13-${kind}`,amount=parsedAmount($(`${prefix}-amount`).value),rateInput=$(`${prefix}-rate`),opInput=$(`${prefix}-operation`),to=$(`${prefix}-converted`),same=$(`${prefix}-currency`).value===$(`${prefix}-converted-currency`).value;
- // A same-currency remittance is exactly ONE face amount, never a rate-based second amount.
- if(same){rateInput.value='1';opInput.value='multiply';to.value=amount>0?formatAmountTyping(String(amount)):'';return}
- const rate=parsedAmount(rateInput.value),op=opInput.value;
- // Preserve the last manually entered conversion on currency/operation changes.
- // Only explicit rate/amount edits with a valid rate recalculate the target.
- if(source==='converted'||source==='currency'||source==='operation'){
-  const value=parsedAmount(to.value),nextRate=op==='multiply'?value/amount:amount/value;
-  if(amount>0&&value>0&&Number.isFinite(nextRate)&&nextRate>0){rateInput.value=formatRateTyping(String(Number(nextRate.toFixed(12))));return}
-  if(source==='converted')return;
+// v24: both remittance money inputs can be authoritative. The rate is never
+// silently rewritten when a cashier enters the converted amount.
+const hawalaLastSource={in:'amount',out:'amount'};
+function hawalaCalculate(kind,source){
+ const prefix=`v13-${kind}`,from=$(`${prefix}-amount`),to=$(`${prefix}-converted`),rateInput=$(`${prefix}-rate`),opInput=$(`${prefix}-operation`);
+ const same=$(`${prefix}-currency`).value===$(`${prefix}-converted-currency`).value;
+ if(source==='amount')hawalaLastSource[kind]='amount';
+ if(source==='converted')hawalaLastSource[kind]='converted';
+ const sourceField=hawalaLastSource[kind];
+ const amount=parsedAmount(from.value),converted=parsedAmount(to.value),rate=parsedAmount(rateInput.value);
+ const set=(element,value)=>{if(Number.isFinite(value)&&value>0)element.value=formatAmountTyping(String(Number(value.toFixed(2))))};
+ if(same){
+  rateInput.value='1';opInput.value='multiply';
+  if(sourceField==='converted'&&source!=='amount')set(from,converted);
+  else set(to,amount);
+  return;
  }
- if(amount>0&&rate>0){const value=op==='multiply'?amount*rate:amount/rate;
-  if(Number.isFinite(value)&&value>0)to.value=formatAmountTyping(String(Number(value.toFixed(2))));
+ if(!(rate>0))return;
+ const op=opInput.value;
+ if(source==='converted'||(source==='rate'&&sourceField==='converted')||((source==='operation'||source==='currency')&&sourceField==='converted')){
+  if(converted>0)set(from,op==='multiply'?converted/rate:converted*rate);
+ }else if(source==='amount'||source==='rate'||source==='operation'||source==='currency'){
+  if(amount>0)set(to,op==='multiply'?amount*rate:amount/rate);
  }
 }
 function resetHawala(kind){const p=`v13-${kind}`;$(p+'-form').reset();$(p+'-rate').value='1';$(p+'-date').value=today();$(p+'-account').value=state.account||'';$(p+'-converted').value='';if($(p+'-sarraf-fee'))$(p+'-sarraf-fee').value='0';if($(p+'-sarraf-fee-currency'))$(p+'-sarraf-fee-currency').value=$(p+'-fee-currency').value;$(p+'-status').textContent='';$(p+'-darak-wrap').hidden=true;state.hwEdit='';document.querySelector('#'+p+'-form button[type="submit"]').textContent='ثبت '+methods[kind];}
@@ -138,9 +148,11 @@ async function addHawala(kind){const p=`v13-${kind}`,account=$(p+'-account').val
    batch.push(hawalaRecord(kind,account,sarrafFee,sarrafFeeCur,'payment','fee-sarraf-credit',doc,id,date,`مفاد صراف ${doc}`,stamp,{...base,documentId:id,ledgerDelta:sarrafFee}));
    batch.push(hawalaRecord(kind,'خزانه',sarrafFee,sarrafFeeCur,'payment','fee-sarraf-cash',doc,id,date,`دریافت مفاد صراف ${doc}`,stamp,{...base,documentId:id,ledgerDelta:sarrafFee}));
  }
- // Incoming darak: automatic commission belongs only to the selected peer account;
- // no extra treasury movement and no duplicate debit to the originating sarraf.
+ // Incoming darak: both fee types are debited from the selected main
+ // account, with remittance commission credited to "مفاد" and peer commission
+ // credited to the selected opposite sarraf. Neither fee moves cash.
  if(kind==='in'&&mode==='darak'&&sarrafFee>0){
+   batch.push(hawalaRecord(kind,account,sarrafFee,sarrafFeeCur,'debt','fee-peer-debit',doc,id,date,`کسر مفاد صراف درک ${doc}`,stamp,{...base,documentId:id,ledgerDelta:-sarrafFee}));
    batch.push(hawalaRecord(kind,peer,sarrafFee,sarrafFeeCur,'payment','fee-peer-credit',doc,id,date,`مفاد صراف درک ${doc}`,stamp,{...base,documentId:id,ledgerDelta:sarrafFee}));
  }
  if(window.MC18&&!window.MC18.checkCashBatch(batch,oldGroup,methods[kind])){$(p+'-status').textContent='موجودی خزانه کافی نیست.';return}
@@ -228,7 +240,7 @@ function setup(){document.querySelector('#page-dashboard').insertAdjacentHTML('a
  $('v13-report-print').addEventListener('click',printV13);$('v13-report-excel').addEventListener('click',exportV13);
  document.querySelector('#v13-home [data-v13-settings]').addEventListener('click',()=>{showPage('settings');const d=$('v13-dash-config').closest('details');d.open=true;d.scrollIntoView({behavior:'smooth'})});
  $('v13-dash-switches').addEventListener('change',e=>{if(!e.target.matches('[data-dash-account]'))return;if(!window.LICENSE_CAN_WRITE)return alert('اشتراک فعال لازم است.');settings.dashboardAccounts=[...document.querySelectorAll('[data-dash-account]:checked')].map(i=>i.dataset.dashAccount);persistMeta();refreshDashboard()});
- for(const kind of ['in','out']){const p='v13-'+kind;$(p+'-date').value=today();for(const id of ['amount','rate','converted','fee','sarraf-fee']){const i=$(p+'-'+id);if(!i)continue;i.addEventListener('input',()=>{formatMoneyInput(i,id==='rate'?formatRateTyping:formatAmountTyping);if(id==='amount'||id==='rate')hawalaCalculate(kind,'rate');else if(id==='converted')hawalaCalculate(kind,'converted')})}$(p+'-operation').addEventListener('change',()=>hawalaCalculate(kind,'operation'));for(const field of ['currency','converted-currency'])$(p+'-'+field).addEventListener('change',()=>{hawalaCalculate(kind,'currency');window.MC19?.syncSameCurrency?.(kind)});for(const i of document.querySelectorAll(`[name="${p}-mode"]`))i.addEventListener('change',()=>{$(p+'-darak-wrap').hidden=i.value!=='darak'||!i.checked});$(p+'-form').addEventListener('submit',e=>{e.preventDefault();addHawala(kind).catch(err=>{$(p+'-status').textContent='ثبت حواله ناموفق بود: '+err.message})});}
+ for(const kind of ['in','out']){const p='v13-'+kind;$(p+'-date').value=today();for(const id of ['amount','rate','converted','fee','sarraf-fee']){const i=$(p+'-'+id);if(!i)continue;i.addEventListener('input',()=>{formatMoneyInput(i,id==='rate'?formatRateTyping:formatAmountTyping);if(id==='amount')hawalaCalculate(kind,'amount');else if(id==='rate')hawalaCalculate(kind,'rate');else if(id==='converted')hawalaCalculate(kind,'converted')})}$(p+'-operation').addEventListener('change',()=>hawalaCalculate(kind,'operation'));for(const field of ['currency','converted-currency'])$(p+'-'+field).addEventListener('change',()=>{hawalaCalculate(kind,'currency');window.MC19?.syncSameCurrency?.(kind)});for(const i of document.querySelectorAll(`[name="${p}-mode"]`))i.addEventListener('change',()=>{$(p+'-darak-wrap').hidden=i.value!=='darak'||!i.checked});$(p+'-form').addEventListener('submit',e=>{e.preventDefault();addHawala(kind).catch(err=>{$(p+'-status').textContent='ثبت حواله ناموفق بود: '+err.message})});}
  document.querySelectorAll('[data-hawala-cancel]').forEach(b=>b.addEventListener('click',()=>showPage('accounts')));
  // Prevent old render logic from discarding our interface; synchronize after every old render.
  const origRender=render;render=function(){origRender();refresh();window.MC14?.onAfterRender?.()};

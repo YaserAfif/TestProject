@@ -28,21 +28,29 @@
    select.title='انتخاب ارز';
    holder.append(inputField,select);amount.append(holder);
    select.addEventListener('change',()=>{
-    const target=[...$('currencyList')?.querySelectorAll('[data-cur]')||[]].find(x=>x.dataset.cur===select.value);
-    if(target)target.click();else { $('currency').value=select.value;$('currencyTrigger').textContent=select.value+' ▾'; }
-    syncJournalCurrency();
+    // Independent currencies: changing one side must NOT rewrite the other.
+    activateJournalCurrency(role);
    });
+   $(id)?.addEventListener('input',()=>activateJournalCurrency(role));
+   $(id)?.addEventListener('focus',()=>activateJournalCurrency(role));
   }
   syncJournalCurrency();
  }
+ function activateJournalCurrency(role){
+  const select=$('v23-'+role+'-currency');if(!select)return;
+  const main=$('currency'),code=select.value;
+  if(main)main.value=code;
+  if($('currencyTrigger'))$('currencyTrigger').textContent=code+' ▾';
+ }
  function syncJournalCurrency(){
-  const value=$('currency')?.value||'AFN',codes=allCurrencies();
+  const codes=allCurrencies(),fallback=$('currency')?.value||'AFN';
   for(const id of ['v23-got-currency','v23-talab-currency']){
-   const select=$(id);if(!select)return;
+   const select=$(id);if(!select)continue;
+   const previous=select.value||fallback;
    if(select.options.length!==codes.length||codes.some((code,i)=>select.options[i]?.value!==code)){
     select.replaceChildren(...codes.map(c=>{const opt=document.createElement('option');opt.value=opt.textContent=c;return opt}));
    }
-   select.value=codes.includes(value)?value:codes[0];
+   select.value=codes.includes(previous)?previous:(codes.includes('AFN')?'AFN':codes[0]);
   }
  }
  function commissionRule(account,cur,principal){
@@ -132,7 +140,7 @@
  function sync(){updateVersion();syncJournalCurrency();inFee(false)}
  function init(){journalLayout();initFees();sync();
   // A voucher edit can set the saved method programmatically, without firing a change event.
-  const oldEdit=C.editLedgerRecord;C.editLedgerRecord=id=>{const result=oldEdit(id);setTimeout(()=>inFee(false),0);return result};
+  const oldEdit=C.editLedgerRecord;C.editLedgerRecord=id=>{const result=oldEdit(id);setTimeout(()=>{inFee(false);if($('editId')?.value){const role=$('gotAmount')?.value?'got':'talab';const picker=$('v23-'+role+'-currency');if(picker)picker.value=$('currency').value;}},0);return result};
   document.addEventListener('click',e=>{if(e.target.closest('[data-v13-edit],[data-v16-voucher],[data-v16-report-open],[data-v17-voucher-edit]'))setTimeout(()=>inFee(false),45)});
   const prevAfter=C.onAfterRender,prevPage=C.onPage;
   C.onAfterRender=()=>{prevAfter?.();sync()};
